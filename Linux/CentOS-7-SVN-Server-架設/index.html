@@ -1,0 +1,224 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>[CentOS 7] SVN Server 架設 | Jo&#39;s Note</title>
+  <meta name="author" content="Jo">
+  
+  <meta name="description" content="前言   
+這個架設筆記使用的環境是 CentOS 7， 在 CentOS 7 中的 subversion 版本比較低，所以另外尋找其他的 repository 來安裝，在這選擇的版本是 1.8，登入驗證的部分是設定跟 AD 認證 (也可以跟 ldap，之後再補充)">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="[CentOS 7] SVN Server 架設"/>
+  <meta property="og:site_name" content="Jo&#39;s Note"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Jo&#39;s Note" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Jo&#39;s Note</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-01-07T16:38:09.000Z"><a href="/Linux/CentOS-7-SVN-Server-架設/">2018-01-08</a></time>
+      
+      
+  
+    <h1 class="title">[CentOS 7] SVN Server 架設</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><strong>前言</strong>   </p>
+<p>這個架設筆記使用的環境是 CentOS 7， 在 CentOS 7 中的 subversion 版本比較低，所以另外尋找其他的 repository 來安裝，在這選擇的版本是 1.8，登入驗證的部分是設定跟 AD 認證 (也可以跟 ldap，之後再補充)</p>
+<a id="more"></a>
+<p><strong>安裝</strong>   </p>
+<ul>
+<li><p>準備 subversion 來源   </p>
+<ul>
+<li><p>在 /etc/yum.repos.d/ 下建立一個 repo 檔   </p>
+ <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /etc/yum.repos.d</span><br><span class="line">vi CentOS-SVN.repo</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>貼上以下內容後存檔   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">[WandiscoSVN]</span><br><span class="line">name=Wandisco SVN Repo</span><br><span class="line">baseurl=http://opensource.wandisco.com/centos/7/svn-1.8/RPMS/<span class="variable">$basearch</span>/</span><br><span class="line">enabled=1</span><br><span class="line">gpgcheck=1</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>完成後執行一下 update   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">yum update</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>安裝需要的套件</p>
+<ul>
+<li><p>apache   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">yum install httpd</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>subversion 及需要的套件   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">yum install subversion mod_dav_svn</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>apache ldap module (SVN 的認證是跟 AD 或 LDAP 認證)   </p>
+ <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">yum install mod_ldap</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+<p><strong>配置</strong>   </p>
+<ul>
+<li><p>建立放檔案庫的目錄   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /opt</span><br><span class="line">mkdir -p svn/svnroot</span><br><span class="line">chown -R apache:apache svn</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>編輯設定檔   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /etc/httpd/conf.d</span><br><span class="line">vi subversion.conf</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改 檔案裡的 <location svn=""> 區塊   </location></p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&lt;Location /svn&gt;</span><br><span class="line">    DAV svn</span><br><span class="line">    SVNParentPath /opt/svn/svnroot</span><br><span class="line">    AuthBasicProvider ldap</span><br><span class="line">    AuthType Basic</span><br><span class="line">    AuthName <span class="string">"SVN Auth. (AD)"</span></span><br><span class="line">    AuthLDAPBindDN <span class="string">"登入AD的DN"</span></span><br><span class="line">    AuthLDAPBindPassword <span class="string">"登入AD的密碼"</span></span><br><span class="line">    AuthDLAPURL <span class="string">"  ldap://xxx.xxx.xxx.xxx:3268/根節點?sAMAccountName?sub?(objectClass=user)"</span></span><br><span class="line">    AuthzForceUsernameCase lower</span><br><span class="line">    AuthzSVNReposRelativeAccessFile authz</span><br><span class="line">    Require valid-user</span><br><span class="line">    Allow from all</span><br><span class="line">&lt;/Location&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>關閉 SELinux   </p>
+<ul>
+<li><p>編輯 /etc/sysconfig/selinux   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">vi /etc/sysconfig/selinux</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>將 SELINUX  改為 disabled，並註解 SELINUXTYPE  </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># This file controls the state of SELinux on the system.</span></span><br><span class="line"><span class="comment"># SELINUX= can take one of these three values:</span></span><br><span class="line"><span class="comment">#     enforcing - SELinux security policy is enforced.</span></span><br><span class="line"><span class="comment">#     permissive - SELinux prints warnings instead of enforcing.</span></span><br><span class="line"><span class="comment">#     disabled - No SELinux policy is loaded.</span></span><br><span class="line">SELINUX=disabled</span><br><span class="line"><span class="comment"># SELINUXTYPE= can take one of three two values:</span></span><br><span class="line"><span class="comment">#     targeted - Targeted processes are protected,</span></span><br><span class="line"><span class="comment">#     minimum - Modification of targeted policy. Only selected processes are protected.</span></span><br><span class="line"><span class="comment">#     mls - Multi Level Security protection.</span></span><br><span class="line"><span class="comment">#SELINUXTYPE=targeted</span></span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>防火牆設定   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">firewall-cmd -add-port=80/tcp --permanent</span><br><span class="line">firewall-cmd --reload</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>設定隨開機啟動   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">systemctl <span class="built_in">enable</span> httpd.service</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>執行服務   </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">systemctl start httpd.service</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p><strong>後記</strong>   </p>
+<p>到這邊都還順利的話，算是已經 將服務架設好了，在 /opt/svn/svnroot/ 下透過 svn 指令建立 repository 和設定權限後即可開始使用。   </p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/Linux/">Linux</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Linux/">Linux</a>, <a href="/tags/Subversion/">Subversion</a>
+  </div>
+
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=385590048179381";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://jodotlearn.github.io/Linux/CentOS-7-SVN-Server-架設/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:jodotlearn.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Categories</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Linux/">Linux</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Subversion/">Subversion</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 Jo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+</body>
+</html>
