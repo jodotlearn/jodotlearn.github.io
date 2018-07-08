@@ -1,0 +1,206 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>初次見面, MongoDB | Jo&#39;s Note</title>
+  <meta name="author" content="Jo">
+  
+  <meta name="description" content="前言其實就是想對資料作 CRUD 又不太想去開 table schema，就瞄一下 MongoDB，為了方便自己測試使用，選擇在本機使用 docker 來建置，在這篇做個防忘記筆記。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="初次見面, MongoDB"/>
+  <meta property="og:site_name" content="Jo&#39;s Note"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Jo&#39;s Note" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Jo&#39;s Note</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-02-20T15:23:00.000Z"><a href="/MongoDB/初次見面-MongoDB/">2018-02-20</a></time>
+      
+      
+  
+    <h1 class="title">初次見面, MongoDB</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><strong>前言</strong><br>其實就是想對資料作 CRUD 又不太想去開 table schema，就瞄一下 MongoDB，為了方便自己測試使用，選擇在本機使用 docker 來建置，在這篇做個防忘記筆記。   </p>
+<a id="more"></a>
+<p><strong>環境</strong><br>Mac OS 10.13.3<br>Docker 17.12.0-ce-mac49    </p>
+<p><strong>步驟</strong></p>
+<ul>
+<li>到 docker-library 的 github 取得 <a href="https://github.com/docker-library/mongo/tree/5ad7b10217359104c1870d2d79bcb6498bf76b70" target="_blank" rel="noopener">mongo 的 Dockerfile 和 docker-entrypoint.sh</a>，版本選擇 3.7<ul>
+<li>2個檔案放在相同目錄下</li>
+<li>在該目錄下建一個 db 資料夾</li>
+</ul>
+</li>
+<li><p>用指令 build image</p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">docker build -t mongo:3.7 .</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>用建立的 image run 一個 container<br>mongo db 預設不開啟權限管控，因此在 run container 的指令加上 –auth 將權限管控啟用</p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">docker run -d -p your_port:27017 -v <span class="variable">$PWD</span>/db:/data/db --name mongodb mongo:3.7 --auth</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>進入建立好的 container </p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it mongodb /bin/bash</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>進入 mongo shell</p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">mongo admin</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>建立 user</p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">db.createUser(&#123;user: <span class="string">'your_account'</span>, <span class="built_in">pwd</span>: <span class="string">'your_password'</span>, roles:[<span class="string">'userAdminAnyDatabase'</span>,<span class="string">'dbAdminAnyDatabase'</span>,<span class="string">'readWriteAnyDatabase'</span>,<span class="string">'clusterAdmin'</span>]&#125;)</span><br><span class="line">   </span><br><span class="line"><span class="built_in">exit</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>改用建立的帳號登入</p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">mongo -u your_account -p your_password --authenticationDatabase admin</span><br></pre></td></tr></table></figure>
+<p>  switch 到一個新的 database<br>  <strong>　如果這個　database 不存在，就會建立一個新的 </strong></p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">use your_db_name</span><br></pre></td></tr></table></figure>
+<p>  建立另一個帳號，對該 database 有管理及讀寫權限<br>  底下指令的 ${your_db_name} 對照到建立的 database name</p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">db.createUser(&#123;user: <span class="string">'a_db_user'</span>, <span class="built_in">pwd</span>:<span class="string">'the_pwd_of_db_user'</span>, roles:[&#123;role:<span class="string">'dbAdmin'</span>,db:<span class="string">'$&#123;your_db_name&#125;'</span>&#125;,&#123;role:<span class="string">'readWrite'</span>,db:<span class="string">'$&#123;your_db_name&#125;'</span>&#125;]&#125;)</span><br><span class="line"></span><br><span class="line"><span class="built_in">exit</span></span><br></pre></td></tr></table></figure>
+<p>  <strong>這麼做的目的是將權限下放給不同　user 管理特定的 database</strong></p>
+</li>
+<li><p>登入的方式</p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">mongo -u a_db_user -p the_pwd_of_db_user --authenticationDatabase your_db_name</span><br></pre></td></tr></table></figure>
+<p>  成功登入後，需要選擇 database</p>
+  <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">use your_db_name</span><br></pre></td></tr></table></figure>
+<p>  <em>原本以為登入後就會直接進到有管理權限的 database，但其實是需要自己再作切換。</em></p>
+</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/MongoDB/">MongoDB</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Linux/">Linux</a>, <a href="/tags/Docker/">Docker</a>, <a href="/tags/MongoDB/">MongoDB</a>
+  </div>
+
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=385590048179381";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://jodotlearn.github.io/MongoDB/初次見面-MongoDB/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:jodotlearn.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Categories</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/categories/MongoDB/">MongoDB</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>2</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>1</small></li>
+  
+    <li><a href="/tags/Subversion/">Subversion</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2018 Jo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+</body>
+</html>
