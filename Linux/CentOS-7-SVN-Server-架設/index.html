@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
 <html>
-<head>
+<head><meta name="generator" content="Hexo 3.9.0">
   <meta charset="utf-8">
   
   <title>[CentOS 7] SVN Server 架設 | Jo&#39;s Note</title>
@@ -12,11 +12,11 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="[CentOS 7] SVN Server 架設"/>
-  <meta property="og:site_name" content="Jo&#39;s Note"/>
+  <meta property="og:title" content="[CentOS 7] SVN Server 架設">
+  <meta property="og:site_name" content="Jo&#39;s Note">
 
   
-    <meta property="og:image" content=""/>
+    <meta property="og:image" content>
   
 
   <link href="/favicon.png" rel="icon">
@@ -26,7 +26,7 @@
   
 
 </head>
-
+</html>
 
 <body>
   <header id="header" class="inner"><div class="alignleft">
@@ -102,7 +102,7 @@
 <li><p>編輯設定檔   </p>
   <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /etc/httpd/conf.d</span><br><span class="line">vi subversion.conf</span><br></pre></td></tr></table></figure>
 </li>
-<li><p>修改 檔案裡的 <location svn=""> 區塊   </location></p>
+<li><p>修改 檔案裡的 <location svn> 區塊   </location></p>
   <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">&lt;Location /svn&gt;</span><br><span class="line">    DAV svn</span><br><span class="line">    SVNParentPath /opt/svn/svnroot</span><br><span class="line">    AuthBasicProvider ldap</span><br><span class="line">    AuthType Basic</span><br><span class="line">    AuthName <span class="string">"SVN Auth. (AD)"</span></span><br><span class="line">    AuthLDAPBindDN <span class="string">"登入AD的DN"</span></span><br><span class="line">    AuthLDAPBindPassword <span class="string">"登入AD的密碼"</span></span><br><span class="line">    AuthDLAPURL <span class="string">"  ldap://xxx.xxx.xxx.xxx:3268/根節點?sAMAccountName?sub?(objectClass=user)"</span></span><br><span class="line">    AuthzForceUsernameCase lower</span><br><span class="line">    AuthzSVNReposRelativeAccessFile authz</span><br><span class="line">    Require valid-user</span><br><span class="line">    Allow from all</span><br><span class="line">&lt;/Location&gt;</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>關閉 SELinux   </p>
